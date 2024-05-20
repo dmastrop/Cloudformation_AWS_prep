@@ -1,0 +1,9 @@
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      #ImageId: ami-0bb84b8ffd87024d8
+      # amazon linux 2023
+      ImageId: ami-04ff98ccbfa41c9ad
+      # amazon linux 2

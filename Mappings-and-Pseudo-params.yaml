@@ -1,0 +1,71 @@
+Mappings: 
+  RegionMap: 
+    us-east-1: 
+      AMI: "ami-0bb84b8ffd87024d8"
+      #Amazon linux 2023 us-east-1
+    us-west-1: 
+      AMI: "ami-0cbe318e714fc9a82"
+      # Amazon linux 2023 us-west-1
+    us-east-2: 
+      AMI: "ami-02bf8ce06a8ed6092"
+      # Amazon linux2023 us-east-2
+    us-west-2: 
+      AMI: "ami-01cd4de4363ab6ee8"
+      # Amazon linux 2023 us-west-2
+    ap-northeast-1: 
+      AMI: "ami-02a405b3302affc24"
+      # Amazon linux 2023 ap-northeast-1
+
+
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      #ImageId: ami-0bb84b8ffd87024d8
+      # amazon linux 2023
+      #ImageId: ami-04ff98ccbfa41c9ad
+      # amazon linux 2
+      #ImageId: ami-04b70fa74e45c3917
+      # ubuntu
+      ImageId: !FindInMap
+      # Use the FindInMap function. Pass name of mapping, subkey
+        - RegionMap
+        - !Ref AWS::Region
+        # this will get the region dynamically
+        - AMI 
+        # this is the subkey
+      Tags:
+        - Key: "Name"
+          #Value: "First_Cloudformation_Instance"
+          Value: !Join ["-", [my, inst, from, cloudformation]]
+
+      SecurityGroups:
+        - !Ref VprofileSG
+        # This is the logical ID of the security group
+        # Note that is ok that we use SG in the EC2 instance prior to it being configured.
+        # Cloudformation is smart enough to create the SG prior to creating the instance
+
+
+  VprofileSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh and  http from MyIP
+      #VpcId: !Ref myVPC
+      # If do not mentino VPCId it will use the default VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 73.202.0.0/16
+
+      # SecurityGroupEgress:
+        # - IpProtocol: tcp
+          # FromPort: 80
+          # ToPort: 80
+          # CidrIp: 0.0.0.0/0
+      # commenting out the egress will allow all traffic outbound anywhere.

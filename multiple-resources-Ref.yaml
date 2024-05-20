@@ -1,0 +1,45 @@
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      #ImageId: ami-0bb84b8ffd87024d8
+      # amazon linux 2023
+      #ImageId: ami-04ff98ccbfa41c9ad
+      # amazon linux 2
+      ImageId: ami-04b70fa74e45c3917
+      # ubuntu
+      Tags:
+        - Key: "Name"
+          #Value: "First_Cloudformation_Instance"
+          Value: !Join ["-", [my, inst, from, cloudformation]]
+
+      SecurityGroups:
+        - !Ref VprofileSG
+        # This is the logical ID of the security group
+        # Note that is ok that we use SG in the EC2 instance prior to it being configured.
+        # Cloudformation is smart enough to create the SG prior to creating the instance
+
+
+  VprofileSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh and  http from MyIP
+      #VpcId: !Ref myVPC
+      # If do not mentino VPCId it will use the default VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 73.202.0.0/16
+
+      # SecurityGroupEgress:
+        # - IpProtocol: tcp
+          # FromPort: 80
+          # ToPort: 80
+          # CidrIp: 0.0.0.0/0
+      # commenting out the egress will allow all traffic outbound anywhere.

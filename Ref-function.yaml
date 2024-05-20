@@ -1,0 +1,26 @@
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      #InstanceType: t2.small
+      #ImageId: ami-0bb84b8ffd87024d8
+      # amazon linux 2023
+      ImageId: ami-04ff98ccbfa41c9ad
+      # amazon linux 2
+      #ImageId: ami-04b70fa74e45c3917
+      # change to ubuntu
+      Tags:
+        - Key: "Name"
+          #Value: "First_Cloudformation_Instance"
+          #Value: !Join ["-", [my, inst, from, cloudformation]]
+          #Value: "change1"
+        #- Key: "project"
+        #  Value: "test"
+
+          Value: !Join
+            - ""
+            - - "My instance in"
+              - !Ref AWS::Region
+              # Region is a pseudo parameter
+              # this will read "My instance in us-east-1"
