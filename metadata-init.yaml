@@ -1,0 +1,201 @@
+Parameters:
+# these will be referred to throughout the template with the !Ref
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#aws-specific-parameter-types
+# Parameter1
+  NameOfService:
+    Description: "The name of the service this stack is to be used for."
+    Type: String
+
+  # Parameter2
+  # Pre-defined parameters. Drop down list during Cloudformation.
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+
+  # Parameter3
+  # This parameter is defined by AWS and the region that this template is run in
+  # Drop down list during Cloudformation.
+  KeyName:
+    Description: Name of EC2 login key
+    Type: AWS::EC2::KeyPair::KeyName
+    # this will show all the keys in my region
+
+
+
+
+
+Mappings: 
+  RegionMap: 
+    us-east-1: 
+      AMI: "ami-0bb84b8ffd87024d8"
+      #Amazon linux 2023 us-east-1
+    us-west-1: 
+      AMI: "ami-0cbe318e714fc9a82"
+      # Amazon linux 2023 us-west-1
+    us-east-2: 
+      AMI: "ami-02bf8ce06a8ed6092"
+      # Amazon linux2023 us-east-2
+    us-west-2: 
+      AMI: "ami-01cd4de4363ab6ee8"
+      # Amazon linux 2023 us-west-2
+    ap-northeast-1: 
+      AMI: "ami-02a405b3302affc24"
+      # Amazon linux 2023 ap-northeast-1
+
+
+
+
+
+
+Resources:
+  #MyInstance:
+  WebServer:
+    Type: AWS::EC2::Instance
+
+    Metadata:
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+      AWS::CloudFormation::Init: 
+       config:
+       # can have multiple configs with config stets as well.
+        packages:
+          yum:
+            php: []
+            httpd: []
+            wget: []
+            unzip: []
+            git: []
+
+        #groups:
+        #users:
+
+        commands:
+          test:
+            command: "wget https://www.toolplate.com/zip-templates/2119_gymso_fitness.zip && unzip 2119_gymso_fitness.zip && cp -r 2119_gymso_fitness/* /var/www/html/"
+
+        files:
+          /var/www/html/hello.html:
+          content: !Sub |
+            <!DOCTYPE html>
+            <html>
+            <body>
+
+            <h1>Welcome to Cloudformation.</h1>
+            <p>This site is deployed by CloudFormation.</p>
+
+            </body>
+            </html>
+
+        services:
+          sysvinit:
+          # SysVinit is a program that starts and stops services based on runlevel, and uses configuration files 
+          # to designate which processes should start, the order in which they should start, and what to do when they terminate. 
+          #It's one of the initialization systems for Unix and Unix-like operating systems.
+            httpd:
+              enabled: true
+              ensureRunning: true
+
+    Properties:
+      UserData:
+        # pass userdata in base64
+        # this will be a config file to execute
+        # WebServer is the logical ID name of the EC2 instance. See above
+        # cfn-init will execute the on the init metadata
+        # cfn-signal will return either 0 ($?)for successful initialization of the data or nonzsero for failure and it will
+        # send the signal to the CFN stack.
+        # nonzero will cause a rollback
+        'Fn::Base64': # or use !Ref
+          !Sub |
+            #!/bin/bash -xe
+            # Ensure AWS CFN Bootsrap is the latest
+            yum install -y aws-cfn-bootstrap
+            # Install the files and packages from the metadata above in "Metadata"
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource WebServer --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebServer --region ${AWS::Region}
+
+      InstanceType: !Ref InstanceTypeParameter
+      # this is the logical ID specified above in Parameters above
+
+      KeyName: !Ref KeyName
+      # the first is the property for the MyInstance and the Ref is referring to the Logical ID "Key Name"
+      # in Parmeters above
+
+      #InstanceType: t2.micro
+      #ImageId: ami-0bb84b8ffd87024d8
+      # amazon linux 2023
+      #ImageId: ami-04ff98ccbfa41c9ad
+      # amazon linux 2
+      #ImageId: ami-04b70fa74e45c3917
+      # ubuntu
+      ImageId: !FindInMap
+      # Use the FindInMap function. Pass name of mapping, subkey
+        - RegionMap
+        - !Ref AWS::Region
+        # this will get the region dynamically as one of the keys
+        - AMI 
+        # this is the subkey
+      Tags:
+        - Key: "Name"
+          #Value: "First_Cloudformation_Instance"
+          #Value: !Join ["-", [my, inst, from, cloudformation]]
+          Value: !Ref NameOfService
+          # this is the parameter NameOfService from above
+
+      SecurityGroups:
+        - !Ref VprofileSG
+        # This is the logical ID of the security group below
+        # Note that is ok that we use SG in the EC2 instance prior to it being configured.
+        # Cloudformation is smart enough to create the SG prior to creating the instance
+
+
+  VprofileSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh and  http from MyIP
+      #VpcId: !Ref myVPC
+      # If do not mentino VPCId it will use the default VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 73.202.0.0/16
+
+      # SecurityGroupEgress:
+        # - IpProtocol: tcp
+          # FromPort: 80
+          # ToPort: 80
+          # CidrIp: 0.0.0.0/0
+      # commenting out the egress will allow all traffic outbound anywhere.
+
+
+
+
+Outputs:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-instance.html
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
+  
+  PrintPublicDNS:
+    Value: !GetAtt 
+      - WebServer
+      - PublicDnsName
+
+  PrintPublicIP:
+   Value: !GetAtt
+     - WebServer
+     - PublicIp
+
+  #PrintPublicDNS:  
+  #  Value: !GetAtt MyInstance.PublicDnsName
+
+  PrintPrivateIP:
+    Value: !GetAtt WebServer.PrivateIp
