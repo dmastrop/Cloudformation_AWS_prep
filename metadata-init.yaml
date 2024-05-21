@@ -34,8 +34,10 @@ Parameters:
 Mappings: 
   RegionMap: 
     us-east-1: 
-      AMI: "ami-0bb84b8ffd87024d8"
+      #AMI: "ami-0bb84b8ffd87024d8"
       #Amazon linux 2023 us-east-1
+      # change to Amazon linux 2
+      AMI: "ami-04ff98ccbfa41c9ad"
     us-west-1: 
       AMI: "ami-0cbe318e714fc9a82"
       # Amazon linux 2023 us-west-1
@@ -81,16 +83,16 @@ Resources:
 
         files:
           /var/www/html/hello.html:
-          content: !Sub |
-            <!DOCTYPE html>
-            <html>
-            <body>
+            content: !Sub |
+              <!DOCTYPE html>
+              <html>
+              <body>
 
-            <h1>Welcome to Cloudformation.</h1>
-            <p>This site is deployed by CloudFormation.</p>
+              <h1>Welcome to Cloudformation.</h1>
+              <p>This site is deployed by CloudFormation.</p>
 
-            </body>
-            </html>
+              </body>
+              </html>
 
         services:
           sysvinit:
